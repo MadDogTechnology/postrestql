@@ -1,0 +1,15 @@
+{
+  "name": "postrestql",
+  "version": "1.0.0",
+  "description": "Creates RESTful web services from a PostgreSQL database",
+  "main": "postrestql.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chris Broski",
+  "license": "ISC",
+  "dependencies": {
+    "mustache": "^2.3.0",
+    "pg": "^6.1.5"
+  }
+}
