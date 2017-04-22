@@ -1,6 +1,6 @@
 {
   "name": "postrestql",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Creates RESTful web services from a PostgreSQL database",
   "main": "postrestql.js",
   "scripts": {
