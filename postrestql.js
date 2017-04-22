@@ -1,6 +1,6 @@
-/*jslint node: true, sloppy: true */
+/*jslint node: true, sloppy: true, vars: true, stupid: true, nomen: true */
 
-// Libraries
+// Import libraries
 var http = require("http");
 var pg = require("pg");
 var fs = require("fs");
@@ -27,7 +27,6 @@ function rspEnd(rsp, status, content, content_type) {
     status = status || 200;
     content_type = content_type || "text/plain";
 
-    // TODO: allow specific CORS origins
     if (config.cors) {
         rsp.setHeader("Access-Control-Allow-Origin", "*");
     }
@@ -183,7 +182,7 @@ function executeSql(req, rsp, route) {
         client.end();
 
         if (req.headers.accept === "application/json") {
-            rspEnd(rsp, 200, JSON.stringify(data, ""), "application/json");
+            rspEnd(rsp, 200, JSON.stringify(json_data, ""), "application/json");
         } else {
             if (req.url === "/") {
                 respondHTMLhome(rsp, json_data);
@@ -329,7 +328,6 @@ function importSQL() {
 
     sys_sql_files.forEach(function (file) {
         var filenames = file.split(".");
-        var file_extension = filenames[filenames.length - 1];
 
         sql[filenames[0]] = fs.readFileSync(__dirname + "/sys_sql/" + file).toString();
     });
@@ -339,7 +337,6 @@ function importSQL() {
 
         sql_files.forEach(function (file) {
             var filenames = file.split(".");
-            var file_extension = filenames[filenames.length - 1];
 
             sql[filenames[0]] = fs.readFileSync(config.sql_folder + "/" + file).toString();
         });
@@ -381,8 +378,9 @@ function init(cfg) {
 3. Check for PUT/POST/DELETE and do appropriate action
 5. Format based on data types
 6. Input validate based on db types
-7. Link from foreign keys
+7. Link to foreign keys
 8. Handle composite keys (how? that's a tough one)
+9. allow specific CORS origins
 */
 
 exports.start = init;
