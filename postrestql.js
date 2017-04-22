@@ -223,7 +223,6 @@ function matchRoute(url) {
 }
 
 function routeMethods(req, rsp) {
-    console.log('route');
     var route = matchRoute(req.url);
 
     if (route.length) {
@@ -343,27 +342,35 @@ function importSQL() {
         sql[filenames[0]] = fs.readFileSync(__dirname + "/sys_sql/" + file).toString();
     });
 
-    var sql_files = fs.readdirSync(config.sql_folder);
+    if (config.sql_folder) {
+        var sql_files = fs.readdirSync(config.sql_folder);
 
-    sql_files.forEach(function (file) {
-        var filenames = file.split(".");
-        var file_extension = filenames[filenames.length - 1];
+        sql_files.forEach(function (file) {
+            var filenames = file.split(".");
+            var file_extension = filenames[filenames.length - 1];
 
-        sql[filenames[0]] = fs.readFileSync(config.sql_folder + "/" + file).toString();
-    });
+            sql[filenames[0]] = fs.readFileSync(config.sql_folder + "/" + file).toString();
+        });
+    } else {
+        console.log('No custom SQL folder defined.');
+    }
 }
 
 function init(cfg) {
     config = cfg;
     var port = config.port || 4100
 
-    // import custom routes
-    config.custom.forEach(function (route) {
-        route.type = "custom";
-        routes.push(route);
-    });
+    // import custom routes, if any
+    if (config.custom && Array.isArray(config.custom)) {
+        config.custom.forEach(function (route) {
+            route.type = "custom";
+            routes.push(route);
+        });
+    } else {
+        console.log('No custom routes found');
+    }
 
-    importSQL(config.sql_folder);
+    importSQL();
     importTemplates(config.template_folder);
     createDataDefinition();
 
