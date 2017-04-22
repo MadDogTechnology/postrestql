@@ -223,6 +223,7 @@ function matchRoute(url) {
 }
 
 function routeMethods(req, rsp) {
+    console.log('route');
     var route = matchRoute(req.url);
 
     if (route.length) {
@@ -256,6 +257,9 @@ function createDefaultRoutes() {
     });
 
     Object.keys(data_defintion).forEach(function (table) {
+        var id_param_type = "$1::integer";
+        var id_url_type = "{{integer}}";
+
         routes.push({
             "name": table + " table",
             "path": "/" + table,
@@ -265,22 +269,17 @@ function createDefaultRoutes() {
         });
 
         if (primaryKey(table).type === "text") {
-            routes.push({
-                "name": table + " record",
-                "path": "/" + table + "/{{text}}",
-                "sql_statement": "SELECT * FROM " + table + " WHERE id = $1::text",
-                "type": "form",
-                "table": table
-            });
-        } else {
-            routes.push({
-                "name": table + " record",
-                "path": "/" + table + "/{{integer}}",
-                "sql_statement": "SELECT * FROM " + table + " WHERE id = $1::integer",
-                "type": "form",
-                "table": table
-            });
+            id_param_type = "$1::text";
+            id_url_type = "{{text}}";
         }
+
+        routes.push({
+            "name": table + " record",
+            "path": "/" + table + id_url_type,
+            "sql_statement": "SELECT * FROM " + table + " WHERE id = " + id_param_type,
+            "type": "form",
+            "table": table
+        });
     });
 }
 
@@ -325,12 +324,11 @@ function createDataDefinition() {
 
 function importTemplates() {
     console.log("Reading mustache templates.");
-    // This is awful. How to get these files relative to the lib location?
     var template_files = fs.readdirSync(__dirname + "/templates");
 
     template_files.forEach(function (file) {
-        var filename = file.split(".")[0];
-        templates[filename] = fs.readFileSync(__dirname + "/templates/" + file).toString();
+        var name = file.split(".")[0];
+        templates[name] = fs.readFileSync(__dirname + "/templates/" + file).toString();
     });
 }
 
@@ -357,6 +355,7 @@ function importSQL() {
 
 function init(cfg) {
     config = cfg;
+    var port = config.port || 4100
 
     // import custom routes
     config.custom.forEach(function (route) {
@@ -368,8 +367,10 @@ function init(cfg) {
     importTemplates(config.template_folder);
     createDataDefinition();
 
-    http.createServer(routeMethods).listen(4100, "0.0.0.0", function () {
-        console.log("Server started on port :4100");
+    http.createServer(routeMethods).on('error', function (e) {
+        console.log(e)
+    }).listen(port, "0.0.0.0", function () {
+        console.log("Server started on port :" + port);
     });
 }
 
