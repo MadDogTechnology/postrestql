@@ -325,23 +325,24 @@ function createDataDefinition() {
 
 function importTemplates() {
     console.log("Reading mustache templates.");
-    var template_files = fs.readdirSync("./templates");
+    // This is awful. How to get these files relative to the lib location?
+    var template_files = fs.readdirSync(__dirname + "/templates");
 
     template_files.forEach(function (file) {
         var filename = file.split(".")[0];
-        templates[filename] = fs.readFileSync("./templates/" + file).toString();
+        templates[filename] = fs.readFileSync(__dirname + "/templates/" + file).toString();
     });
 }
 
 function importSQL() {
     console.log("Reading SQL files.");
-    var sys_sql_files = fs.readdirSync("./sys_sql");
+    var sys_sql_files = fs.readdirSync(__dirname + "/sys_sql");
 
     sys_sql_files.forEach(function (file) {
         var filenames = file.split(".");
         var file_extension = filenames[filenames.length - 1];
 
-        sql[filenames[0]] = fs.readFileSync("./sys_sql/" + file).toString();
+        sql[filenames[0]] = fs.readFileSync(__dirname + "/sys_sql/" + file).toString();
     });
 
     var sql_files = fs.readdirSync(config.sql_folder);
