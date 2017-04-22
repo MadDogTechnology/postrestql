@@ -1,10 +1,12 @@
 /*jslint node: true, sloppy: true */
 
+// Libraries
 var http = require("http");
 var pg = require("pg");
 var fs = require("fs");
 var mustache = require("Mustache");
 
+// Globals
 var config;
 var templates = {};
 var sql = {};
@@ -20,15 +22,24 @@ function htmlEncode(rawHtml) {
     return rawHtml.replace(/>/g, "&gt;");
 }
 
-function respondJson(rsp, data) {
-    rsp.writeHead(200, {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+function rspEnd(rsp, status, content, content_type) {
+    content = content || "";
+    status = status || 200;
+    content_type = content_type || "text/plain";
+
+    // TODO: allow specific CORS origins
+    if (config.cors) {
+        rsp.setHeader("Access-Control-Allow-Origin", "*");
+    }
+
+    rsp.writeHead(status, {
+        "Content-Type": content_type
     });
-    rsp.end(JSON.stringify(data, ""));
+
+    rsp.end(content);
 }
 
-function primaryKey(table) {
+function getPrimaryKey(table) {
     var keyField = Object.keys(data_defintion[table]).find(function (col) {
         return data_defintion[table][col].primary_key;
     });
@@ -45,22 +56,13 @@ function respondHTML(rsp, data, page_name, type, table) {
 
     type = type || "table";
     if (data.length === 0) {
-        rsp.writeHead(404, {
-            "Content-Type": "text/plain",
-            "Access-Control-Allow-Origin": "*"
-        });
-        rsp.end("No data found.");
+        rspEnd(rsp, 404, "No data found.")
         return;
     }
 
     if (type === "table") {
         form_partial = {form: templates.form};
     }
-
-    rsp.writeHead(200, {
-        "Content-Type": "text/html",
-        "Access-Control-Allow-Origin": "*"
-    });
 
     table_data.cols = [];
     Object.keys(data[0]).forEach(function (key) {
@@ -99,12 +101,19 @@ function respondHTML(rsp, data, page_name, type, table) {
         table_data.pairs.push(pair);
     });
 
-    rsp.end(mustache.render(templates.doc, {
+    /*rsp.end(mustache.render(templates.doc, {
         "page_content": mustache.render(templates[type], table_data, form_partial),
         "page_title": page_name,
         "app_name": app_name,
         "user_name": user_name
-    }), "utf-8");
+    }), "utf-8");*/
+    // headers are getting set somewhere else, nor sure where
+    rspEnd(rsp, 200, mustache.render(templates.doc, {
+        "page_content": mustache.render(templates[type], table_data, form_partial),
+        "page_title": page_name,
+        "app_name": app_name,
+        "user_name": user_name
+    }), "text/html");
 }
 
 function respondHTMLhome(rsp, data) {
@@ -127,16 +136,11 @@ function respondHTMLhome(rsp, data) {
         }
     });
 
-    rsp.writeHead(200, {
-        "Content-Type": "text/html",
-        "Access-Control-Allow-Origin": "*"
-    });
-
-    rsp.end(mustache.render(templates.doc, {
+    rspEnd(rsp, 200, mustache.render(templates.doc, {
         "page_content": mustache.render(templates.home, home_data),
         "app_name": app_name,
         "user_name": user_name
-    }), "utf-8");
+    }), "text/html");
 }
 
 function executeSql(req, rsp, route) {
@@ -161,11 +165,7 @@ function executeSql(req, rsp, route) {
 
     query.on("error", function (error) {
         console.log(error);
-        rsp.writeHead(500, {
-            "Content-Type": "text/plain",
-            "Access-Control-Allow-Origin": "*"
-        });
-        rsp.end("SQL error.");
+        rspEnd(rsp, 500, "SQL error.")
         return;
     });
 
@@ -183,7 +183,7 @@ function executeSql(req, rsp, route) {
         client.end();
 
         if (req.headers.accept === "application/json") {
-            respondJson(rsp, json_data);
+            rspEnd(rsp, 200, JSON.stringify(data, ""), "application/json");
         } else {
             if (req.url === "/") {
                 respondHTMLhome(rsp, json_data);
@@ -227,11 +227,7 @@ function routeMethods(req, rsp) {
 
     if (route.length) {
         if (req.method.toUpperCase() !== "GET") {
-            rsp.writeHead(405, {
-                "Content-Type": "text/plain",
-                "Access-Control-Allow-Origin": "*"
-            });
-            rsp.end("Only GET is supported at this time.");
+            rspEnd(rsp, 405, "Only GET is supported at this time.");
             return;
         }
         if (!route[0].method || req.method.toUpperCase() === route[0].method.toUpperCase()) {
@@ -240,11 +236,7 @@ function routeMethods(req, rsp) {
         }
     }
 
-    rsp.writeHead(404, {
-        "Content-Type": "text/plain",
-        "Access-Control-Allow-Origin": "*"
-    });
-    rsp.end("Not found.");
+    rspEnd(rsp, 404, "Not found.");
 }
 
 function createDefaultRoutes() {
@@ -267,14 +259,14 @@ function createDefaultRoutes() {
             "table": table
         });
 
-        if (primaryKey(table).type === "text") {
+        if (getPrimaryKey(table).type === "text") {
             id_param_type = "$1::text";
             id_url_type = "{{text}}";
         }
 
         routes.push({
             "name": table + " record",
-            "path": "/" + table + id_url_type,
+            "path": "/" + table + "/" + id_url_type,
             "sql_statement": "SELECT * FROM " + table + " WHERE id = " + id_param_type,
             "type": "form",
             "table": table
@@ -371,7 +363,7 @@ function init(cfg) {
     }
 
     importSQL();
-    importTemplates(config.template_folder);
+    importTemplates();
     createDataDefinition();
 
     http.createServer(routeMethods).on('error', function (e) {
