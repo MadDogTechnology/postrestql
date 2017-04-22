@@ -56,7 +56,7 @@ function respondHTML(rsp, data, page_name, type, table) {
 
     type = type || "table";
     if (data.length === 0) {
-        rspEnd(rsp, 404, "No data found.")
+        rspEnd(rsp, 404, "No data found.");
         return;
     }
 
@@ -165,7 +165,7 @@ function executeSql(req, rsp, route) {
 
     query.on("error", function (error) {
         console.log(error);
-        rspEnd(rsp, 500, "SQL error.")
+        rspEnd(rsp, 500, "SQL error.");
         return;
     });
 
@@ -350,7 +350,11 @@ function importSQL() {
 
 function init(cfg) {
     config = cfg;
-    var port = config.port || 4100
+    var port = config.port || 4100;
+
+    if (!config.db_connections.web_user) {
+        config.db_connections.web_user = config.db_connections.admin;
+    }
 
     // import custom routes, if any
     if (config.custom && Array.isArray(config.custom)) {
@@ -367,7 +371,7 @@ function init(cfg) {
     createDataDefinition();
 
     http.createServer(routeMethods).on('error', function (e) {
-        console.log(e)
+        console.log(e);
     }).listen(port, "0.0.0.0", function () {
         console.log("Server started on port :" + port);
     });
