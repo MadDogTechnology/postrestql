@@ -1,0 +1,16 @@
+<table>
+    <thead>
+        <tr>
+            {{#cols}}
+            <td>{{.}}
+            {{/cols}}
+
+    <tbody>
+        {{#rows}}
+        <tr>
+            {{#.}}
+            <td>{{{.}}}
+            {{/.}}
+        {{/rows}}
+
+</table>

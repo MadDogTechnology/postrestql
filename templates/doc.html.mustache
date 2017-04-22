@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PostRESTql - {{app_name}} - {{page_title}}</title>
+<style type="text/css">
+html {
+    margin: 0;
+    font-family: sans-serif;
+}
+body {
+    margin: 0;
+}
+header {
+    padding: 8px 16px;
+    background: #000;
+    color: #fff;
+}
+header h2, header h3 {
+    margin: 0;
+    color: #fff;
+}
+header h2 a {
+    text-decoration: none;
+    color: tomato;
+}
+header h3 {
+    padding-top: 4px;
+    float: right;
+    font-weight: normal;
+    font-size: 16px;
+}
+article {
+    padding: 16px;
+}
+article *:first-child {
+    margin-top: 0;
+}
+h1, h2, h3, h4, h5 {
+    text-transform: capitalize;
+}
+h1 {
+    font-size: 28px;
+    color: #666;
+}
+h2 {
+    font-size: 22px;
+}
+p {
+    font-size: 14px;
+}
+td {
+    font-size: 12px;
+}
+thead td {
+    font-weight: bold;
+}
+label {
+    margin-bottom: 1em;
+    display: block;
+}
+input[type="text"] {
+    display: block;
+}
+
+article > section {
+    padding-right: 32px;
+    float: left;
+}
+
+form {
+    width: 160px;
+    float: left;
+    clear: left;
+}
+input[type="text"] {
+    width: 140px;
+}
+</style>
+<body>
+
+<header>
+<h3>User: {{user_name}}</h3>
+<h2><a href="/">PostRESTql</a></h2>
+</header>
+
+<article>
+
+<h1>{{app_name}}{{#page_title}} · {{/page_title}}{{page_title}}</h1>
+
+{{{page_content}}}
+
+</article>

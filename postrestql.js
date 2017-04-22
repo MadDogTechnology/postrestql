@@ -1,15 +1,15 @@
-/*jslint node: true */
+/*jslint node: true, sloppy: true */
 
-const http = require('http');
-const pg = require('pg');
-const fs = require('fs');
-const mustache = require('Mustache');
+var http = require("http");
+var pg = require("pg");
+var fs = require("fs");
+var mustache = require("Mustache");
 
-var config
-const templates = {};
-const sql = {};
+var config;
+var templates = {};
+var sql = {};
 var routes = [];
-const data_defintion = {};
+var data_defintion = {};
 var app_name;
 var user_name;
 
@@ -22,15 +22,15 @@ function htmlEncode(rawHtml) {
 
 function respondJson(rsp, data) {
     rsp.writeHead(200, {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
     });
     rsp.end(JSON.stringify(data, ""));
 }
 
 function primaryKey(table) {
-    const keyField = Object.keys(data_defintion[table]).find(function (col) {
-        return data_defintion[table][col].primary_key
+    var keyField = Object.keys(data_defintion[table]).find(function (col) {
+        return data_defintion[table][col].primary_key;
     });
 
     if (keyField) {
@@ -40,28 +40,28 @@ function primaryKey(table) {
 }
 
 function respondHTML(rsp, data, page_name, type, table) {
-    var form_partial = {};
+    var form_partial = {},
+        table_data = {};
 
-    type = type || 'table';
+    type = type || "table";
     if (data.length === 0) {
         rsp.writeHead(404, {
-            'Content-Type': 'text/plain',
-            'Access-Control-Allow-Origin': '*'
+            "Content-Type": "text/plain",
+            "Access-Control-Allow-Origin": "*"
         });
-        rsp.end('No data found.');
+        rsp.end("No data found.");
         return;
     }
 
     if (type === "table") {
-        form_partial = {form: templates["form"]}
+        form_partial = {form: templates.form};
     }
 
     rsp.writeHead(200, {
-        'Content-Type': 'text/html',
-        'Access-Control-Allow-Origin': '*'
+        "Content-Type": "text/html",
+        "Access-Control-Allow-Origin": "*"
     });
 
-    var table_data = {};
     table_data.cols = [];
     Object.keys(data[0]).forEach(function (key) {
         table_data.cols.push(key);
@@ -73,7 +73,7 @@ function respondHTML(rsp, data, page_name, type, table) {
         Object.keys(row).forEach(function (val) {
             if (table) {
                 if (data_defintion[table][val].primary_key) {
-                    row_data.push('<a href="/' + table + '/' + htmlEncode(row[val]) + '">' + htmlEncode(row[val]) + '</a>');
+                    row_data.push("<a href=\"/" + table + "/" + htmlEncode(row[val]) + "\">" + htmlEncode(row[val]) + "</a>");
                 } else {
                     row_data.push(htmlEncode(row[val]));
                 }
@@ -93,7 +93,7 @@ function respondHTML(rsp, data, page_name, type, table) {
         if (table) {
             pair.type = data_defintion[table][row].type;
             pair.key = data_defintion[table][row].primary_key;
-            pair.label = row.replace(/\_/g, " ")
+            pair.label = row.replace(/\_/g, " ");
         }
 
         table_data.pairs.push(pair);
@@ -104,7 +104,7 @@ function respondHTML(rsp, data, page_name, type, table) {
         "page_title": page_name,
         "app_name": app_name,
         "user_name": user_name
-    }), 'utf-8');
+    }), "utf-8");
 }
 
 function respondHTMLhome(rsp, data) {
@@ -128,19 +128,19 @@ function respondHTMLhome(rsp, data) {
     });
 
     rsp.writeHead(200, {
-        'Content-Type': 'text/html',
-        'Access-Control-Allow-Origin': '*'
+        "Content-Type": "text/html",
+        "Access-Control-Allow-Origin": "*"
     });
 
     rsp.end(mustache.render(templates.doc, {
         "page_content": mustache.render(templates.home, home_data),
         "app_name": app_name,
         "user_name": user_name
-    }), 'utf-8');
+    }), "utf-8");
 }
 
 function executeSql(req, rsp, route) {
-    const client = new pg.Client(config.db_connections.web_user);
+    var client = new pg.Client(config.db_connections.web_user);
     var sql_statement;
     var json_data = [];
 
@@ -159,30 +159,30 @@ function executeSql(req, rsp, route) {
         query = client.query(sql_statement);
     }
 
-    query.on('error', function(error) {
+    query.on("error", function (error) {
         console.log(error);
         rsp.writeHead(500, {
-            'Content-Type': 'text/plain',
-            'Access-Control-Allow-Origin': '*'
+            "Content-Type": "text/plain",
+            "Access-Control-Allow-Origin": "*"
         });
-        rsp.end('SQL error.');
+        rsp.end("SQL error.");
         return;
     });
 
-    query.on('row', function(row) {
-        const jsonRow = {};
+    query.on("row", function (row) {
+        var jsonRow = {};
 
         Object.keys(row).forEach(function (col) {
-            jsonRow[col] = row[col]
+            jsonRow[col] = row[col];
         });
 
         json_data.push(jsonRow);
     });
 
-    query.on('end', function() {
+    query.on("end", function () {
         client.end();
 
-        if (req.headers['accept'] === 'application/json') {
+        if (req.headers.accept === "application/json") {
             respondJson(rsp, json_data);
         } else {
             if (req.url === "/") {
@@ -196,25 +196,26 @@ function executeSql(req, rsp, route) {
 
 function matchRoute(url) {
     // remove query string
-    const queryStringStart = url.indexOf("?");
+    var queryStringStart = url.indexOf("?");
     if (queryStringStart > -1) {
         url = url.slice(0, queryStringStart);
     }
 
-    var route, route_data, path;
+    var route;
+    var path;
     var route_and_data = [];
 
     route = routes.find(function (r) {
-        path = r.path.replace(/\{\{text\}\}/g, '(\\w+)');
-        path = path.replace(/\{\{integer\}\}/g, '(\\d+)');
-        const re = new RegExp("^" + path + "$", "i");
+        path = r.path.replace(/\{\{text\}\}/g, "(\\w+)");
+        path = path.replace(/\{\{integer\}\}/g, "(\\d+)");
+        var re = new RegExp("^" + path + "$", "i");
         return re.exec(url);
     });
 
     if (route) {
-        path = route.path.replace(/\{\{text\}\}/g, '(\\w+)');
-        path = path.replace(/\{\{integer\}\}/g, '(\\d+)');
-        const re = new RegExp("^" + path + "$", "i");
+        path = route.path.replace(/\{\{text\}\}/g, "(\\w+)");
+        path = path.replace(/\{\{integer\}\}/g, "(\\d+)");
+        var re = new RegExp("^" + path + "$", "i");
         route_and_data = re.exec(url).slice(1);
         route_and_data.unshift(route);
     }
@@ -222,15 +223,15 @@ function matchRoute(url) {
 }
 
 function routeMethods(req, rsp) {
-    const route = matchRoute(req.url);
+    var route = matchRoute(req.url);
 
     if (route.length) {
-        if (req.method.toUpperCase() !== 'GET') {
+        if (req.method.toUpperCase() !== "GET") {
             rsp.writeHead(405, {
-                'Content-Type': 'text/plain',
-                'Access-Control-Allow-Origin': '*'
+                "Content-Type": "text/plain",
+                "Access-Control-Allow-Origin": "*"
             });
-            rsp.end('Only GET is supported at this time.');
+            rsp.end("Only GET is supported at this time.");
             return;
         }
         if (!route[0].method || req.method.toUpperCase() === route[0].method.toUpperCase()) {
@@ -240,10 +241,10 @@ function routeMethods(req, rsp) {
     }
 
     rsp.writeHead(404, {
-        'Content-Type': 'text/plain',
-        'Access-Control-Allow-Origin': '*'
+        "Content-Type": "text/plain",
+        "Access-Control-Allow-Origin": "*"
     });
-    rsp.end('Not found.');
+    rsp.end("Not found.");
 }
 
 function createDefaultRoutes() {
@@ -263,7 +264,7 @@ function createDefaultRoutes() {
             "table": table
         });
 
-        if (primaryKey(table).type === 'text') {
+        if (primaryKey(table).type === "text") {
             routes.push({
                 "name": table + " record",
                 "path": "/" + table + "/{{text}}",
@@ -284,14 +285,12 @@ function createDefaultRoutes() {
 }
 
 function getTableInfo() {
-    const client = new pg.Client(config.db_connections.admin);
+    var client = new pg.Client(config.db_connections.admin);
     client.connect();
 
-    const query = client.query(sql.get_db_info);
+    var query = client.query(sql.get_db_info);
 
-    query.on('row', function(row) {
-        const jsonRow = {};
-
+    query.on("row", function (row) {
         if (!data_defintion[row.tablename]) {
             data_defintion[row.tablename] = {};
         }
@@ -301,50 +300,57 @@ function getTableInfo() {
         data_defintion[row.tablename][row.column_name].primary_key = row.primary_key;
     });
 
-    query.on('end', function() {
+    query.on("end", function () {
         client.end();
         createDefaultRoutes();
-    })
+    });
 }
 
 function createDataDefinition() {
-    const client = new pg.Client(config.db_connections.admin);
+    var client = new pg.Client(config.db_connections.admin);
     client.connect();
 
-    const query = client.query("SELECT current_catalog, current_user");
+    var query = client.query("SELECT current_catalog, current_user");
 
-    query.on('row', function(row) {
+    query.on("row", function (row) {
         app_name = row.current_database.replace(/\_/g, " ");
         user_name = row.current_user;
     });
 
-    query.on('end', function() {
+    query.on("end", function () {
         client.end();
         getTableInfo();
-    })
+    });
 }
 
 function importTemplates() {
     console.log("Reading mustache templates.");
-    const template_files = fs.readdirSync('./html_templates');
+    var template_files = fs.readdirSync("./templates");
 
     template_files.forEach(function (file) {
-        var filenames = file.split(".");
-        var file_extension = filenames[filenames.length - 1];
-        var filename = filenames[0];
-        templates[filename] = fs.readFileSync('./html_templates/' + file).toString();
+        var filename = file.split(".")[0];
+        templates[filename] = fs.readFileSync("./templates/" + file).toString();
     });
 }
 
 function importSQL() {
     console.log("Reading SQL files.");
-    const sql_files = fs.readdirSync('./sql');
+    var sys_sql_files = fs.readdirSync("./sys_sql");
+
+    sys_sql_files.forEach(function (file) {
+        var filenames = file.split(".");
+        var file_extension = filenames[filenames.length - 1];
+
+        sql[filenames[0]] = fs.readFileSync("./sys_sql/" + file).toString();
+    });
+
+    var sql_files = fs.readdirSync(config.sql_folder);
 
     sql_files.forEach(function (file) {
         var filenames = file.split(".");
         var file_extension = filenames[filenames.length - 1];
 
-        sql[filenames[0]] = fs.readFileSync('./sql/' + file).toString();
+        sql[filenames[0]] = fs.readFileSync(config.sql_folder + "/" + file).toString();
     });
 }
 
@@ -362,7 +368,7 @@ function init(cfg) {
     createDataDefinition();
 
     http.createServer(routeMethods).listen(4100, "0.0.0.0", function () {
-        console.log('Server started on port :4100');
+        console.log("Server started on port :4100");
     });
 }
 
@@ -374,4 +380,4 @@ function init(cfg) {
 8. Handle composite keys (how? that's a tough one)
 */
 
-exports.start = init
+exports.start = init;

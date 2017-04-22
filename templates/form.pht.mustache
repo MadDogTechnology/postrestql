@@ -1,0 +1,14 @@
+<form action="" method="POST">
+{{#pairs}}
+<label>{{label}}
+<input type="text" value="{{val}}"{{#key}} disabled="disabled"{{/key}} name="{{name}}">
+</label>
+{{/pairs}}
+<input type="hidden" name="pseudo-method" value="PUT">
+<label><button>Update</button></label>
+</form>
+
+<form action="" method="POST">
+<input type="hidden" name="pseudo-method" value="DELETE">
+<button>Delete</button>
+</form>

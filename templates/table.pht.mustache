@@ -1,0 +1,25 @@
+<form action="" method="POST">
+{{#pairs}}
+<label>{{label}}
+<input type="text" value=""{{#key}} disabled="disabled"{{/key}} name="{{name}}">
+</label>
+{{/pairs}}
+<label><button>Insert</button></label>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            {{#cols}}
+            <td>{{.}}
+            {{/cols}}
+
+    <tbody>
+        {{#rows}}
+        <tr>
+            {{#.}}
+            <td>{{{.}}}
+            {{/.}}
+        {{/rows}}
+
+</table>
